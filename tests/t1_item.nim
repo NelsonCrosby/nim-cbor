@@ -3,93 +3,87 @@ import strutils
 import cbor
 
 
-proc parse(str: string): tuple[item: CborItem, length: int] =
-  result = str.parseHexStr.cborItem
-
-template tt(str: string, xlength: int) =
+template tt(str: string, xlength: int, xkind: CborItemKind) =
   var
     item {.inject.}: CborItem
     length {.inject.}: int
-  (item, length) = str.parse
+  (item, length) = str.parseHexStr().cborItem
   require length == xlength
+  require item.kind == xkind
+
+template tv(str: string, offset: int, xlength: int, xkind: CborItemKind) =
+  (item, length) = str.parseHexStr().cborItem(offset)
+  require length == xlength
+  require item.kind == xkind
 
 suite "CborItem decode integers":
   test "0":
-    "00".tt 1
-    require item.kind == cbPositive
+    "00".tt 1, cbPositive
     require item.valueInt == 0
   test "-1":
-    "20".tt 1
-    require item.kind == cbNegative
+    "20".tt 1, cbNegative
     require item.valueInt == 0
   test "0x449A522B":
-    "1A449A522B".tt 5
-    require item.kind == cbPositive
+    "1A449A522B".tt 5, cbPositive
     require item.valueInt == 0x449A522B'u64
 
 suite "CborItem decode strings":
   test "bytes(8)":
-    "48".tt 1
-    require item.kind == cbByteString
+    "48".tt 1, cbByteString
     require item.countBytes == 8
   test "str(32)":
-    "7820".tt 2
-    require item.kind == cbTextString
+    "7820".tt 2, cbTextString
     require item.countBytes == 32
 
 suite "CborItem decode arrays/maps":
-  test "[](0)":
-    "80".tt 1
-    require item.kind == cbArray
+  test "#3[0, -2, null, str(8)]":
+    var data = "830021F668"
+    data.tt 1, cbArray
     require item.bound == true
-    require item.countItems == 0
+    require item.countItems == 3
+    data.tv 1, 1, cbPositive
+    require item.valueInt == 0
+    data.tv 2, 1, cbNegative
+    require item.valueInt == 1
+    data.tv 3, 1, cbNull
+    data.tv 4, 1, cbTextString
+    require item.countBytes == 8
   test "[":
-    "9F".tt 1
-    require item.kind == cbArray
+    "9F".tt 1, cbArray
     require item.bound == false
-  test "{}(16)":
-    "B0".tt 1
-    require item.kind == cbTable
+  test "#16{}":
+    "B0".tt 1, cbTable
     require item.bound == true
     require item.countItems == 16
   test "{":
-    "BF".tt 1
-    require item.kind == cbTable
+    "BF".tt 1, cbTable
     require item.bound == false
 
 suite "CborItem decode tags":
   test "/18":
-    "D2".tt 1
-    require item.kind == cbTag
+    "D2".tt 1, cbTag
     require item.valueTag == 18
   test "/43":
-    "D82B".tt 2
-    require item.kind == cbTag
+    "D82B".tt 2, cbTag
     require item.valueTag == 43
 
 suite "CborItem decode simple values":
   test "false":
-    "F4".tt 1
-    require item.kind == cbBoolean
+    "F4".tt 1, cbBoolean
     require item.valueBool == false
   test "true":
-    "F5".tt 1
-    require item.kind == cbBoolean
+    "F5".tt 1, cbBoolean
     require item.valueBool == true
   test "null":
-    "F6".tt 1
-    require item.kind == cbNull
+    "F6".tt 1, cbNull
   test "undefined":
-    "F7".tt 1
-    require item.kind == cbUndefined
+    "F7".tt 1, cbUndefined
 
   test "f32(1234.5678)":
-    "FA449A522B".tt 5
-    require item.kind == cbFloat32
+    "FA449A522B".tt 5, cbFloat32
     require item.valueFloat32 == 1234.5678'f32
   test "f64(0)":
-    "FB0000000000000000".tt 9
-    require item.kind == cbFloat64
+    "FB0000000000000000".tt 9, cbFloat64
     require item.valueFloat64 == 0.0
 
 
@@ -118,7 +112,7 @@ suite "CborItem encode strings":
     require value.toHex == "7820"
 
 suite "CborItem encode arrays/maps":
-  test "[](0)":
+  test "#0[]":
     var value = CborItem(kind: cbArray, bound: true, countItems: 0).encode()
     require value.len == 1
     require value.toHex == "80"
@@ -126,7 +120,7 @@ suite "CborItem encode arrays/maps":
     var value = CborItem(kind: cbArray, bound: false).encode()
     require value.len == 1
     require value.toHex == "9F"
-  test "{}(16)":
+  test "#16{}":
     var value = CborItem(kind: cbTable, bound: true, countItems: 16).encode()
     require value.len == 1
     require value.toHex == "B0"

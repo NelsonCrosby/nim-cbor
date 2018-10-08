@@ -314,36 +314,38 @@ var cborJumpTable: array[byte, tuple[item: CborItem, remaining: int]] = [
 ]
 
 
-proc cborItem*(src: string): tuple[item: CborItem, length: int] =
-  if src.len < 1:
+proc cborItem*(src: string, offset: int = 0): tuple[item: CborItem, length: int] =
+  var available = src.len - offset
+
+  if available < 1:
     result.length = 0
     return
 
   var remaining: int
-  (result.item, remaining) = cborJumpTable[byte(src[0])]
+  (result.item, remaining) = cborJumpTable[byte(src[offset])]
   result.length = remaining + 1
 
   if remaining == 0:
     # No data remaining, so we have the complete item already.
     return
 
-  if src.len <= remaining:
-    result.length = (src.len - 1) - remaining
+  if available <= remaining:
+    result.length = (available - 1) - remaining
     return
 
-  var infoValue = uint64(src[1])
+  var infoValue = uint64(src[offset + 1])
   if remaining >= 2:
-    infoValue = (infoValue shl 8) + uint64(src[2])
+    infoValue = (infoValue shl 8) + uint64(src[offset + 2])
   if remaining >= 4:
     infoValue = (infoValue shl 16) +
-      (uint64(src[3]) shl 8) +
-      (uint64(src[4]))
+      (uint64(src[offset + 3]) shl 8) +
+      (uint64(src[offset + 4]))
   if remaining >= 8:
     infoValue = (infoValue shl 32) +
-      (uint64(src[5]) shl 24) +
-      (uint64(src[6]) shl 16) +
-      (uint64(src[7]) shl 8) +
-      (uint64(src[8]))
+      (uint64(src[offset + 5]) shl 24) +
+      (uint64(src[offset + 6]) shl 16) +
+      (uint64(src[offset + 7]) shl 8) +
+      (uint64(src[offset + 8]))
 
   case result.item.kind:
     of cbPositive, cbNegative:
