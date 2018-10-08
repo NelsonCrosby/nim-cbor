@@ -1,0 +1,5 @@
+nimcache/
+*.exe
+
+t[0-9]_*
+!*.nim
