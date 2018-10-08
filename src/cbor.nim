@@ -364,3 +364,106 @@ proc cborItem*(src: string): tuple[item: CborItem, length: int] =
       result.item.valueFloat64 = cast[float32](infoValue)
     else:
       discard   # The rest of the kinds don't have extra info
+
+proc encode*(item: CborItem): string =
+  var
+    cbKind = uint8(item.kind)
+    info = -1
+    infoValue = 0'u64
+    extraLen: int
+
+  case item.kind:
+    of cbPositive, cbNegative:
+      infoValue = item.valueInt
+    of cbByteString, cbTextString:
+      infoValue = item.countBytes
+    of cbArray, cbTable:
+      if not item.bound:
+        info = 31
+      else:
+        infoValue = item.countItems
+    of cbTag:
+      infoValue = item.valueTag
+    of cbSimple:
+      infoValue = item.valueSimple
+
+    of cbBoolean:
+      cbKind = uint8(cbSimple)
+      info =
+        if item.valueBool: 21
+        else: 20
+    of cbNull:
+      cbKind = uint8(cbSimple)
+      info = 22
+    of cbUndefined:
+      cbKind = uint8(cbSimple)
+      info = 23
+    
+    of cbFloat16:
+      cbKind = uint8(cbSimple)
+      assert false, "TODO: 16-bit float"
+    of cbFloat32:
+      cbKind = uint8(cbSimple)
+      extraLen = 4
+      info = 26
+      infoValue = uint64(cast[uint32](item.valueFloat32))
+    of cbFloat64:
+      cbKind = uint8(cbSimple)
+      extraLen = 8
+      info = 27
+      infoValue = cast[uint64](item.valueFloat64)
+
+    of cbBreak:
+      cbKind = uint8(cbSimple)
+      info = 31
+    
+    of cbInvalid:
+      # What are you doing??
+      cbKind = uint8(item.invalidKind)
+      info = int(item.invalidInfo)
+
+  if info < 0:
+    if infoValue < 24:
+      info = int(infoValue)
+    elif infoValue <= 0xFF'u64:
+      extraLen = 1
+      info = 24
+    elif infoValue <= 0xFFFF'u64:
+      extraLen = 2
+      info = 25
+    elif infoValue <= 0xFFFF_FFFF'u64:
+      extraLen = 4
+      info = 26
+    elif infoValue <= 0xFFFF_FFFF_FFFF_FFFF'u64:
+      extraLen = 8
+      info = 27
+
+  let lead = (cbKind shl 5) + uint8(info and 0x1F)
+
+  result = newStringOfCap(extraLen + 1)
+  result.add char(lead)
+
+  case extraLen:
+    of 0:
+      return
+    of 1:
+      result.add char(infoValue)
+    of 2:
+      result.add char(infoValue shr 8 and 0xFF)
+      result.add char(infoValue and 0xFF)
+    of 4:
+      result.add char(infoValue shr 24 and 0xFF)
+      result.add char(infoValue shr 16 and 0xFF)
+      result.add char(infoValue shr 8 and 0xFF)
+      result.add char(infoValue and 0xFF)
+    of 8:
+      result.add char(infoValue shr 56 and 0xFF)
+      result.add char(infoValue shr 48 and 0xFF)
+      result.add char(infoValue shr 40 and 0xFF)
+      result.add char(infoValue shr 32 and 0xFF)
+      result.add char(infoValue shr 24 and 0xFF)
+      result.add char(infoValue shr 16 and 0xFF)
+      result.add char(infoValue shr 8 and 0xFF)
+      result.add char(infoValue and 0xFF)
+    else:
+      discard
