@@ -363,7 +363,7 @@ proc cborItem*(src: string, offset: int = 0): tuple[item: CborItem, length: int]
     of cbFloat32:
       result.item.valueFloat32 = cast[float32](infoValue)
     of cbFloat64:
-      result.item.valueFloat64 = cast[float32](infoValue)
+      result.item.valueFloat64 = cast[float64](infoValue)
     else:
       discard   # The rest of the kinds don't have extra info
 
