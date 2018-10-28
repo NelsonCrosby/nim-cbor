@@ -45,8 +45,8 @@ suite "CborObject decode":
     require obj.table[1].key.valueInt == 12
     require obj.table[1].value.kind == cboUndefined
   
-  test "#3[ 1, 2, #2[ 1, 2 ] ]":
-    @["830102820102"].tt true, cboArray
+  test "#3[ 1, 2, #2[ 1, -2, \"three\" ] ]":
+    @["830102830121657468726565"].tt true, cboArray
 
     require obj.items[0].kind == cboInteger
     require obj.items[0].valueInt == 1
@@ -57,4 +57,21 @@ suite "CborObject decode":
     require obj.items[2].items[0].kind == cboInteger
     require obj.items[2].items[0].valueInt == 1
     require obj.items[2].items[1].kind == cboInteger
-    require obj.items[2].items[1].valueInt == 2
+    require obj.items[2].items[1].valueInt == -2
+    require obj.items[2].items[2].kind == cboString
+    require obj.items[2].items[2].isText == true
+    require obj.items[2].items[2].data == "three"
+
+
+suite "CborObject encode":
+  test "#2{ h'020456': null, 12: undefined }":
+    var item = CborObject(
+      kind: cboTable,
+      table: @{
+        CborObject(kind: cboString, isText: false, data: "020456".parseHexStr()):
+          CborObject(kind: cboNull),
+        CborObject(kind: cboInteger, valueInt: 12):
+          CborObject(kind: cboUndefined)
+      }
+    )
+    require item.encode().toHex() == "A243020456F60CF7"

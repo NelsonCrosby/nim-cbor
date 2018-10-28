@@ -97,7 +97,6 @@ proc newCborObjectParser*(): CborObjectParser =
   result.itemQueue = initSinglyLinkedList[CborParserItem]()
   result.depthStack = initDoublyLinkedList[CborParserDepthEntry]()
 
-
 proc add*(parser: CborObjectParser, data: string) =
   var
     buffer: string
@@ -278,3 +277,63 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
         result.obj.invalidItem = item
 
     result.done = true
+
+
+proc encode*(obj: CborObject): string =
+  result = ""
+  var item: CborItem
+
+  case obj.kind:
+    of cboInteger:
+      if obj.valueInt < 0:
+        item.kind = cbNegative
+        item.valueInt = uint64(obj.valueInt + 1)
+      else:
+        item.kind = cbPositive
+        item.valueInt = uint64(obj.valueInt)
+
+    of cboString:
+      item.kind =
+        if obj.isText: cbTextString
+        else: cbByteString
+      item.countBytes = uint64(obj.data.len)
+      result = obj.data
+    
+    of cboArray:
+      item.kind = cbArray
+      item.bound = true
+      item.countItems = uint64(obj.items.len)
+      for el in obj.items:
+        result.add(el.encode())
+      
+    of cboTable:
+      item.kind = cbTable
+      item.bound = true
+      item.countItems = uint64(obj.table.len)
+      for entry in obj.table:
+        result.add(entry.key.encode())
+        result.add(entry.value.encode())
+    
+    of cboBoolean:
+      item.kind = cbBoolean
+      item.valueBool = obj.isSet
+    
+    of cboNull:
+      item.kind = cbNull
+    of cboUndefined:
+      item.kind = cbUndefined
+    
+    of cboFloat32:
+      item.kind = cbFloat32
+      item.valueFloat32 = obj.valueFloat32
+    of cboFloat64:
+      item.kind = cbFloat64
+      item.valueFloat64 = obj.valueFloat64
+    
+    of cboInvalid:
+      item = obj.invalidItem
+    
+  if result.len == 0:
+    result = item.encode()
+  else:
+    result = item.encode() & result
