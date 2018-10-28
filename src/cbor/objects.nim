@@ -70,7 +70,7 @@ type
     of cboFloat64:
       valueFloat64*: float64
     of cboInvalid:
-      invalidItem: CborItem
+      invalidItem*: CborItem
 
   CborObjectParser* = ref object
     buffer: string

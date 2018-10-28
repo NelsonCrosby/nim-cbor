@@ -1,7 +1,6 @@
 import unittest
 import strutils
-import cbor/objects
-import cbor/diagnostics
+import cbor
 
 
 template tt(strs: seq[string], xdone: bool, xkind: CborObjectKind) =
@@ -119,3 +118,9 @@ suite "diagnostic encoder":
       ]
     )
     require item.diagnostic() == "[1, 2, [1, -2, \"three\"]]"
+
+  test "simple values":
+    var item = CborObject(kind: cboInvalid, invalidItem: CborItem(
+      kind: cbSimple, valueSimple: 255
+    ))
+    require item.diagnostic() == "simple(255)"

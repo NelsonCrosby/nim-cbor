@@ -1,5 +1,6 @@
 import math
 import strutils
+import items
 import objects
 
 
@@ -67,4 +68,14 @@ proc diagnostic*(obj: CborObject): string =
         else: $obj.valueFloat64
 
     of cboInvalid:
-      result = "!!!"
+      let item = obj.invalidItem
+      case item.kind:
+        of cbSimple:
+          result = "simple(" & $item.valueSimple & ")"
+        else:
+          result = (
+            "!!!(" &
+            "kind: " & $item.invalidKind &
+            ", info: " & $item.invalidInfo &
+            ")"
+          )
