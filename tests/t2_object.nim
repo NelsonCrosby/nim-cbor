@@ -79,6 +79,17 @@ suite "CborObject encode":
 
 
 suite "diagnostic encoder":
+  test "[ Infinity, -Infinity, NaN ]":
+    var item = CborObject(
+      kind: cboArray,
+      items: @[
+        CborObject(kind: cboFloat32, valueFloat32: Inf),
+        CborObject(kind: cboFloat64, valueFloat64: NegInf),
+        CborObject(kind: cboFloat64, valueFloat64: NaN),
+      ]
+    )
+    require item.diagnostic() == "[Infinity, -Infinity, NaN]"
+
   test "{ h'020456': null, 12: undefined }":
     var item = CborObject(
       kind: cboTable,

@@ -1,3 +1,4 @@
+import math
 import strutils
 import objects
 
@@ -53,9 +54,17 @@ proc diagnostic*(obj: CborObject): string =
     of cboUndefined:
       result = "undefined"
     of cboFloat32:
-      result = $obj.valueFloat32
+      result = case obj.valueFloat32.classify:
+        of fcInf: "Infinity"
+        of fcNegInf: "-Infinity"
+        of fcNaN: "NaN"
+        else: $obj.valueFloat32
     of cboFloat64:
-      result = $obj.valueFloat64
+      result = case obj.valueFloat64.classify:
+        of fcInf: "Infinity"
+        of fcNegInf: "-Infinity"
+        of fcNaN: "NaN"
+        else: $obj.valueFloat64
 
     of cboInvalid:
       result = "!!!"
