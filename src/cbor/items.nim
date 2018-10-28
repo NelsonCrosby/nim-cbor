@@ -400,7 +400,7 @@ proc encode*(item: CborItem): string =
     of cbUndefined:
       cbKind = uint8(cbSimple)
       info = 23
-    
+
     of cbFloat16:
       cbKind = uint8(cbSimple)
       assert false, "TODO: 16-bit float"
@@ -418,7 +418,7 @@ proc encode*(item: CborItem): string =
     of cbBreak:
       cbKind = uint8(cbSimple)
       info = 31
-    
+
     of cbInvalid:
       # What are you doing??
       cbKind = uint8(item.invalidKind)

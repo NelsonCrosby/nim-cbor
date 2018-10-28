@@ -5,75 +5,75 @@ import cbor
 
 template tt(str: string, xlength: int, xkind: CborItemKind) =
   var
-    item {.inject.}: CborItem
+    it {.inject.}: CborItem
     length {.inject.}: int
-  (item, length) = str.parseHexStr().cborItem
+  (it, length) = str.parseHexStr().cborItem
   require length == xlength
-  require item.kind == xkind
+  require it.kind == xkind
 
 template tv(str: string, offset: int, xlength: int, xkind: CborItemKind) =
-  (item, length) = str.parseHexStr().cborItem(offset)
+  (it, length) = str.parseHexStr().cborItem(offset)
   require length == xlength
-  require item.kind == xkind
+  require it.kind == xkind
 
 suite "CborItem decode integers":
   test "0":
     "00".tt 1, cbPositive
-    require item.valueInt == 0
+    require it.valueInt == 0
   test "-1":
     "20".tt 1, cbNegative
-    require item.valueInt == 0
+    require it.valueInt == 0
   test "0x449A522B":
     "1A449A522B".tt 5, cbPositive
-    require item.valueInt == 0x449A522B'u64
+    require it.valueInt == 0x449A522B'u64
 
 suite "CborItem decode strings":
   test "bytes(8)":
     "48".tt 1, cbByteString
-    require item.countBytes == 8
+    require it.countBytes == 8
   test "str(32)":
     "7820".tt 2, cbTextString
-    require item.countBytes == 32
+    require it.countBytes == 32
 
 suite "CborItem decode arrays/maps":
   test "#4[0, -2, null, str(8)]":
     var data = "840021F668"
     data.tt 1, cbArray
-    require item.bound == true
-    require item.countItems == 4
+    require it.bound == true
+    require it.countItems == 4
     data.tv 1, 1, cbPositive
-    require item.valueInt == 0
+    require it.valueInt == 0
     data.tv 2, 1, cbNegative
-    require item.valueInt == 1
+    require it.valueInt == 1
     data.tv 3, 1, cbNull
     data.tv 4, 1, cbTextString
-    require item.countBytes == 8
+    require it.countBytes == 8
   test "[":
     "9F".tt 1, cbArray
-    require item.bound == false
+    require it.bound == false
   test "#16{}":
     "B0".tt 1, cbTable
-    require item.bound == true
-    require item.countItems == 16
+    require it.bound == true
+    require it.countItems == 16
   test "{":
     "BF".tt 1, cbTable
-    require item.bound == false
+    require it.bound == false
 
 suite "CborItem decode tags":
   test "/18":
     "D2".tt 1, cbTag
-    require item.valueTag == 18
+    require it.valueTag == 18
   test "/43":
     "D82B".tt 2, cbTag
-    require item.valueTag == 43
+    require it.valueTag == 43
 
 suite "CborItem decode simple values":
   test "false":
     "F4".tt 1, cbBoolean
-    require item.valueBool == false
+    require it.valueBool == false
   test "true":
     "F5".tt 1, cbBoolean
-    require item.valueBool == true
+    require it.valueBool == true
   test "null":
     "F6".tt 1, cbNull
   test "undefined":
@@ -81,10 +81,10 @@ suite "CborItem decode simple values":
 
   test "f32(1234.5678)":
     "FA449A522B".tt 5, cbFloat32
-    require item.valueFloat32 == 1234.5678'f32
+    require it.valueFloat32 == 1234.5678'f32
   test "f64(0)":
     "FB0000000000000000".tt 9, cbFloat64
-    require item.valueFloat64 == 0.0
+    require it.valueFloat64 == 0.0
 
 
 suite "CborItem encode integer":

@@ -198,7 +198,7 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
 
       of cbArray:
         result.obj.kind = cboArray
-        
+
         if item.bound:
           var
             done: bool
@@ -222,7 +222,7 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
 
       of cbTable:
         result.obj.kind = cboTable
-        
+
         if item.bound:
           var
             done: bool
@@ -247,7 +247,7 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
             (value, done) = parser.next()
             assert done, "internal consistency error"
             result.obj.table.add((key, value))
-      
+
       of cbTag:
         result.obj.kind = cboInvalid
         result.obj.invalidItem = item
@@ -255,16 +255,16 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
       of cbSimple:
         result.obj.kind = cboInvalid
         result.obj.invalidItem = item
-      
+
       of cbBoolean:
         result.obj.kind = cboBoolean
         result.obj.isSet = item.valueBool
-      
+
       of cbNull:
         result.obj.kind = cboNull
       of cbUndefined:
         result.obj.kind = cboUndefined
-  
+
       of cbFloat16, cbFloat32:
         result.obj.kind = cboFloat32
         result.obj.valueFloat32 = item.valueFloat32
@@ -279,61 +279,59 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
     result.done = true
 
 
-proc encode*(obj: CborObject): string =
-  result = ""
-  var item: CborItem
-
+proc item*(obj: CborObject): CborItem =
   case obj.kind:
     of cboInteger:
       if obj.valueInt < 0:
-        item.kind = cbNegative
-        item.valueInt = uint64(obj.valueInt + 1)
+        result.kind = cbNegative
+        result.valueInt = uint64(obj.valueInt + 1)
       else:
-        item.kind = cbPositive
-        item.valueInt = uint64(obj.valueInt)
+        result.kind = cbPositive
+        result.valueInt = uint64(obj.valueInt)
 
     of cboString:
-      item.kind =
+      result.kind =
         if obj.isText: cbTextString
         else: cbByteString
-      item.countBytes = uint64(obj.data.len)
-      result = obj.data
-    
+      result.countBytes = uint64(obj.data.len)
+
     of cboArray:
-      item.kind = cbArray
-      item.bound = true
-      item.countItems = uint64(obj.items.len)
-      for el in obj.items:
-        result.add(el.encode())
-      
+      result.kind = cbArray
+      result.bound = true
+      result.countItems = uint64(obj.items.len)
+
     of cboTable:
-      item.kind = cbTable
-      item.bound = true
-      item.countItems = uint64(obj.table.len)
-      for entry in obj.table:
-        result.add(entry.key.encode())
-        result.add(entry.value.encode())
-    
+      result.kind = cbTable
+      result.bound = true
+      result.countItems = uint64(obj.table.len)
+
     of cboBoolean:
-      item.kind = cbBoolean
-      item.valueBool = obj.isSet
-    
+      result.kind = cbBoolean
+      result.valueBool = obj.isSet
+
     of cboNull:
-      item.kind = cbNull
+      result.kind = cbNull
     of cboUndefined:
-      item.kind = cbUndefined
-    
+      result.kind = cbUndefined
+
     of cboFloat32:
-      item.kind = cbFloat32
-      item.valueFloat32 = obj.valueFloat32
+      result.kind = cbFloat32
+      result.valueFloat32 = obj.valueFloat32
     of cboFloat64:
-      item.kind = cbFloat64
-      item.valueFloat64 = obj.valueFloat64
-    
+      result.kind = cbFloat64
+      result.valueFloat64 = obj.valueFloat64
+
     of cboInvalid:
-      item = obj.invalidItem
-    
-  if result.len == 0:
-    result = item.encode()
-  else:
-    result = item.encode() & result
+      result = obj.invalidItem
+
+proc encode*(obj: CborObject): string =
+  result = obj.item.encode()
+  if obj.kind == cboString:
+    result.add(obj.data)
+  elif obj.kind == cboArray:
+    for entry in obj.items:
+      result.add(entry.encode())
+  elif obj.kind == cboTable:
+    for entry in obj.table:
+      result.add(entry.key.encode())
+      result.add(entry.value.encode())
