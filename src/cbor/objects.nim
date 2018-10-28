@@ -52,6 +52,7 @@ type
     cboInvalid
 
   CborObject* = object
+    tags*: seq[uint64]
     case kind*: CborObjectKind:
     of cboInteger:
       valueInt*: int64
@@ -89,6 +90,25 @@ type
 
   CborParserDepthEntry = object
     node: SinglyLinkedNode[CborParserItem]
+
+
+const
+  CborTagDateTimeStd* = 0'u64
+  CborTagDateTimeEpoch* = 1'u64
+  CborTagBignumPositive* = 2'u64
+  CborTagBignumNegative* = 3'u64
+  CborTagDecimalFraction* = 4'u64
+  CborTagBigfloat* = 5'u64
+  CborTagXConvertBase64Url* = 21'u64
+  CborTagXConvertBase64* = 22'u64
+  CborTagXConvertBase16* = 23'u64
+  CborTagCborItem* = 24'u64
+  CborTagUri* = 32'u64
+  CborTagBase64Url* = 33'u64
+  CborTagBase64* = 34'u64
+  CborTagRegExp* = 35'u64
+  CborTagMimeMessage* = 36'u64
+  CborTagSelfDescribe* = 55799'u64
 
 
 proc newCborObjectParser*(): CborObjectParser =
@@ -162,7 +182,8 @@ proc add*(parser: CborObjectParser, data: string) =
 
     while done and not parser.depthStack.tail.isNil:
       var dtail = parser.depthStack.tail
-      dtail.needChildren -= 1
+      if dtail.item.kind != cbTag:
+        dtail.needChildren -= 1
       if dtail.needChildren <= 0 and dtail.needRaw <= 0:
         parser.depthStack.pop()
       else:
@@ -249,8 +270,13 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
             result.obj.table.add((key, value))
 
       of cbTag:
-        result.obj.kind = cboInvalid
-        result.obj.invalidItem = item
+        var done: bool
+        (result.obj, done) = parser.next()
+        assert done, "internal consistency error"
+        if result.obj.tags.isNil:
+          result.obj.tags = @[item.valueTag]
+        else:
+          result.obj.tags.insert(item.valueTag)
 
       of cbSimple:
         result.obj.kind = cboInvalid
@@ -325,7 +351,13 @@ proc item*(obj: CborObject): CborItem =
       result = obj.invalidItem
 
 proc encode*(obj: CborObject): string =
-  result = obj.item.encode()
+  result = ""
+  if not obj.tags.isNil:
+    for tag in obj.tags:
+      result.add(CborItem(kind: cbTag, valueTag: tag).encode())
+
+  result.add(obj.item.encode())
+
   if obj.kind == cboString:
     result.add(obj.data)
   elif obj.kind == cboArray:

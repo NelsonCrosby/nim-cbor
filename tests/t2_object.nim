@@ -21,8 +21,9 @@ template tt(strs: seq[string], xdone: bool, xkind: CborObjectKind) =
 
 
 suite "CborObject decode":
-  test "#2{ h'020456': null, 12: undefined }":
-    @["A243020456F60CF7"].tt true, cboTable
+  test "#2{ h'020456': null, 12: undefined, \"time\": 1(1363896240) }":
+    @["A343020456F60CF76474696D65C11A514B67B0"].tt true, cboTable
+    require obj.table.len == 3
 
     require obj.table[0].key.kind == cboString
     require obj.table[0].key.isText == false
@@ -32,6 +33,15 @@ suite "CborObject decode":
     require obj.table[1].key.kind == cboInteger
     require obj.table[1].key.valueInt == 12
     require obj.table[1].value.kind == cboUndefined
+
+    require obj.table[2].key.kind == cboString
+    require obj.table[2].key.isText == true
+    require obj.table[2].key.data == "time"
+    require obj.table[2].value.tags.isNil == false
+    require obj.table[2].value.tags.len == 1
+    require obj.table[2].value.tags[0] == 1
+    require obj.table[2].value.kind == cboInteger
+    require obj.table[2].value.valueInt == 1363896240
 
   test "#2{ h'020456': null, 12: undefined } (broken)":
     @["A2", "43", "0204", "56F6", "0CF7"].tt true, cboTable
@@ -64,17 +74,19 @@ suite "CborObject decode":
 
 
 suite "CborObject encode":
-  test "#2{ h'020456': null, 12: undefined }":
+  test "#2{ h'020456': null, 12: undefined, \"time\": 1(1363896240) }":
     var item = CborObject(
       kind: cboTable,
       table: @{
         CborObject(kind: cboString, isText: false, data: "020456".parseHexStr()):
           CborObject(kind: cboNull),
         CborObject(kind: cboInteger, valueInt: 12):
-          CborObject(kind: cboUndefined)
+          CborObject(kind: cboUndefined),
+        CborObject(kind: cboString, isText: true, data: "time"):
+          CborObject(tags: @[CborTagDateTimeEpoch], kind: cboInteger, valueInt: 1363896240)
       }
     )
-    require item.encode().toHex() == "A243020456F60CF7"
+    require item.encode().toHex() == "A343020456F60CF76474696D65C11A514B67B0"
 
 
 suite "diagnostic encoder":
@@ -89,17 +101,19 @@ suite "diagnostic encoder":
     )
     require item.diagnostic() == "[Infinity, -Infinity, NaN]"
 
-  test "{ h'020456': null, 12: undefined }":
+  test "{ h'020456': null, 12: undefined, \"time\": 1(1363896240) }":
     var item = CborObject(
       kind: cboTable,
       table: @{
         CborObject(kind: cboString, isText: false, data: "020456".parseHexStr()):
           CborObject(kind: cboNull),
         CborObject(kind: cboInteger, valueInt: 12):
-          CborObject(kind: cboUndefined)
+          CborObject(kind: cboUndefined),
+        CborObject(kind: cboString, isText: true, data: "time"):
+          CborObject(tags: @[CborTagDateTimeEpoch], kind: cboInteger, valueInt: 1363896240)
       }
     )
-    let expect = "{h'020456': null, 12: undefined}"
+    let expect = "{h'020456': null, 12: undefined, \"time\": 1(1363896240)}"
     let actual = item.diagnostic()
     require actual.len == expect.len
     require actual == expect
