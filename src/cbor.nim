@@ -1,5 +1,4 @@
-import cbor.items
-export items.CborItemKind
-export items.CborItem
-export items.cborItem
-export items.encode
+import cbor/items
+import cbor/objects
+export items
+export objects

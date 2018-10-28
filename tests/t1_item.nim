@@ -36,11 +36,11 @@ suite "CborItem decode strings":
     require item.countBytes == 32
 
 suite "CborItem decode arrays/maps":
-  test "#3[0, -2, null, str(8)]":
-    var data = "830021F668"
+  test "#4[0, -2, null, str(8)]":
+    var data = "840021F668"
     data.tt 1, cbArray
     require item.bound == true
-    require item.countItems == 3
+    require item.countItems == 4
     data.tv 1, 1, cbPositive
     require item.valueInt == 0
     data.tv 2, 1, cbNegative
