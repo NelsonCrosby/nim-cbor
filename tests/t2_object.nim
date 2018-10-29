@@ -37,7 +37,6 @@ suite "CborObject decode":
     require obj.table[2].key.kind == cboString
     require obj.table[2].key.isText == true
     require obj.table[2].key.data == "time"
-    require obj.table[2].value.tags.isNil == false
     require obj.table[2].value.tags.len == 1
     require obj.table[2].value.tags[0] == 1
     require obj.table[2].value.kind == cboInteger

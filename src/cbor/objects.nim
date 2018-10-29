@@ -170,10 +170,12 @@ proc add*(parser: CborObjectParser, data: string) =
         parser.depthStack.append(CborParserDepthEntry(node: node))
         done = item.countBytes == 0
       elif item.kind == cbArray:
+        assert item.bound, "TODO: unbound items are currently broken"
         node.value.needChildren = int(item.countItems)
         parser.depthStack.append(CborParserDepthEntry(node: node))
         done = item.countItems == 0
       elif item.kind == cbTable:
+        assert item.bound, "TODO: unbound items are currently broken"
         node.value.needChildren = int(item.countItems) * 2
         parser.depthStack.append(CborParserDepthEntry(node: node))
         done = item.countItems == 0
@@ -214,8 +216,11 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
       of cbByteString, cbTextString:
         result.obj.kind = cboString
         result.obj.isText = item.kind == cbTextString
-        assert parser.itemQueue.head.value.kind == ikRaw, "internal consistency error"
-        result.obj.data = parser.itemQueue.pop().data
+        if item.countBytes == 0:
+          result.obj.data = ""
+        else:
+          assert parser.itemQueue.head.value.kind == ikRaw, "internal consistency error"
+          result.obj.data = parser.itemQueue.pop().data
 
       of cbArray:
         result.obj.kind = cboArray
@@ -273,10 +278,7 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
         var done: bool
         (result.obj, done) = parser.next()
         assert done, "internal consistency error"
-        if result.obj.tags.isNil:
-          result.obj.tags = @[item.valueTag]
-        else:
-          result.obj.tags.insert(item.valueTag)
+        result.obj.tags.insert(item.valueTag)
 
       of cbSimple:
         result.obj.kind = cboInvalid
@@ -352,9 +354,8 @@ proc item*(obj: CborObject): CborItem =
 
 proc encode*(obj: CborObject): string =
   result = ""
-  if not obj.tags.isNil:
-    for tag in obj.tags:
-      result.add(CborItem(kind: cbTag, valueTag: tag).encode())
+  for tag in obj.tags:
+    result.add(CborItem(kind: cbTag, valueTag: tag).encode())
 
   result.add(obj.item.encode())
 

@@ -80,6 +80,5 @@ proc diagnostic*(obj: CborObject): string =
             ")"
           )
 
-  if not obj.tags.isNil:
-    for i in countdown(obj.tags.high, obj.tags.low):
-      result = $obj.tags[i] & "(" & result & ")"
+  for i in countdown(obj.tags.high, obj.tags.low):
+    result = $obj.tags[i] & "(" & result & ")"
