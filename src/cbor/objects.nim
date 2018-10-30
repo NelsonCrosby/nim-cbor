@@ -170,23 +170,32 @@ proc add*(parser: CborObjectParser, data: string) =
         parser.depthStack.append(CborParserDepthEntry(node: node))
         done = item.countBytes == 0
       elif item.kind == cbArray:
-        assert item.bound, "TODO: unbound items are currently broken"
-        node.value.needChildren = int(item.countItems)
+        if item.bound:
+          node.value.needChildren = int(item.countItems)
+        else:
+          node.value.needChildren = -1
         parser.depthStack.append(CborParserDepthEntry(node: node))
         done = item.countItems == 0
       elif item.kind == cbTable:
-        assert item.bound, "TODO: unbound items are currently broken"
-        node.value.needChildren = int(item.countItems) * 2
+        if item.bound:
+          node.value.needChildren = int(item.countItems) * 2
+        else:
+          node.value.needChildren = -2
         parser.depthStack.append(CborParserDepthEntry(node: node))
         done = item.countItems == 0
+      elif item.kind == cbBreak:
+        if not parser.depthStack.tail.isNil and
+            parser.depthStack.tail.needChildren < 0:
+          parser.depthStack.tail.value.node.value.needChildren = 0
+        done = true
       else:
         done = true
 
     while done and not parser.depthStack.tail.isNil:
       var dtail = parser.depthStack.tail
-      if dtail.item.kind != cbTag:
+      if dtail.item.kind != cbTag and dtail.needChildren > 0:
         dtail.needChildren -= 1
-      if dtail.needChildren <= 0 and dtail.needRaw <= 0:
+      if dtail.needChildren == 0 and dtail.needRaw == 0:
         parser.depthStack.pop()
       else:
         done = false
@@ -202,8 +211,10 @@ proc add*(parser: CborObjectParser, data: string) =
 proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
   result.done = false
   var head = parser.itemQueue.head
+  if head.isNil:
+    return
   assert head.value.kind == ikItem, "internal consistency error"
-  if head.value.needChildren <= 0 and head.value.needRaw <= 0:
+  if head.value.needChildren == 0 and head.value.needRaw == 0:
     let item = parser.itemQueue.pop().item
     case item.kind:
       of cbPositive:
