@@ -135,10 +135,7 @@ proc add*(parser: CborObjectParser, data: string) =
 
   while true:
     var done = false
-    if not parser.depthStack.tail.isNil and (
-      parser.depthStack.tail.item.kind == cbByteString or
-      parser.depthStack.tail.item.kind == cbTextString
-    ):
+    if not parser.depthStack.tail.isNil and parser.depthStack.tail.needRaw > 0:
       var need = parser.depthStack.tail.needRaw
       var tailIndex = offset + need
       if tailIndex > buffer.len:
@@ -166,7 +163,11 @@ proc add*(parser: CborObjectParser, data: string) =
       parser.itemQueue.append(node)
 
       if item.kind == cbByteString or item.kind == cbTextString:
-        node.value.needRaw = int(item.countBytes)
+        if item.boundStr:
+          node.value.needRaw = int(item.countBytes)
+        else:
+          node.value.needRaw = 0
+          node.value.needChildren = -1
         parser.depthStack.append(CborParserDepthEntry(node: node))
         done = item.countBytes == 0
       elif item.kind == cbArray:
@@ -225,13 +226,27 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
         result.obj.valueInt = -1'i64 - int64(item.valueInt)
 
       of cbByteString, cbTextString:
-        result.obj.kind = cboString
-        result.obj.isText = item.kind == cbTextString
-        if item.countBytes == 0:
-          result.obj.data = ""
+        var data: string
+        if not item.boundStr:
+          while true:
+            var chld = parser.itemQueue.pop().item
+            if chld.kind == cbBreak:
+              break
+            elif chld.kind != item.kind or not chld.boundStr:
+              result.obj.kind = cboInvalid
+              result.obj.invalidItem = item
+              result.done = true
+              return
+            else:
+              data.add(parser.itemQueue.pop().data)
+        elif item.countBytes == 0:
+          data = ""
         else:
           assert parser.itemQueue.head.value.kind == ikRaw, "internal consistency error"
-          result.obj.data = parser.itemQueue.pop().data
+          data = parser.itemQueue.pop().data
+        result.obj.kind = cboString
+        result.obj.isText = item.kind == cbTextString
+        result.obj.data = data
 
       of cbArray:
         result.obj.kind = cboArray

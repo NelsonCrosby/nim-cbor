@@ -71,6 +71,11 @@ proc `==`(c: CborObject, j: JsonNode): bool =
             return
 
 
+proc print(exc: ref Exception) =
+  echo "Traceback (most recent call last)"
+  echo exc.getStackTrace(), exc.name, ": ", exc.msg
+
+
 var vectors = loadVectors("tests/vectors/appendix_a.json")
 vectors = vectors.filter do (e: Entry) -> bool: e.hex.len > 0
 
@@ -86,10 +91,15 @@ for vector in vectors.mitems:
   try:
     parser.add(vector.hex.parseHexStr())
     (vector.obj, done) = parser.next()
+  except AssertionError:
+    echo "FAILED ", vector.hex, ": Assertion"
+    echo "  ", getCurrentExceptionMsg()
+    continue
   except:
     nFailed += 1
     echo "FAILED ", vector.hex, ": Exception"
-    echo "  ", getCurrentExceptionMsg()
+    getCurrentException().print()
+    echo()
     continue
 
   if not done:

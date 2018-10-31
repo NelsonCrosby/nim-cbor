@@ -17,6 +17,7 @@ type
     of cbPositive, cbNegative:
       valueInt*: uint64
     of cbByteString, cbTextString:
+      boundStr*: bool
       countBytes*: uint64
     of cbArray, cbTable:
       bound*: bool
@@ -109,72 +110,72 @@ var cborJumpTable: array[byte, tuple[item: CborItem, remaining: int]] = [
   (CborItem(kind: cbInvalid, invalidKind: cbNegative, invalidInfo: 31), 0),       # 1_1F
 
   # ### KIND 2: BYTE STRING ### #
-  (CborItem(kind: cbByteString, countBytes: 0), 0),                               # 2_00
-  (CborItem(kind: cbByteString, countBytes: 1), 0),                               # 2_01
-  (CborItem(kind: cbByteString, countBytes: 2), 0),                               # 2_02
-  (CborItem(kind: cbByteString, countBytes: 3), 0),                               # 2_03
-  (CborItem(kind: cbByteString, countBytes: 4), 0),                               # 2_04
-  (CborItem(kind: cbByteString, countBytes: 5), 0),                               # 2_05
-  (CborItem(kind: cbByteString, countBytes: 6), 0),                               # 2_06
-  (CborItem(kind: cbByteString, countBytes: 7), 0),                               # 2_07
-  (CborItem(kind: cbByteString, countBytes: 8), 0),                               # 2_08
-  (CborItem(kind: cbByteString, countBytes: 9), 0),                               # 2_09
-  (CborItem(kind: cbByteString, countBytes: 10), 0),                              # 2_0A
-  (CborItem(kind: cbByteString, countBytes: 11), 0),                              # 2_0B
-  (CborItem(kind: cbByteString, countBytes: 12), 0),                              # 2_0C
-  (CborItem(kind: cbByteString, countBytes: 13), 0),                              # 2_0D
-  (CborItem(kind: cbByteString, countBytes: 14), 0),                              # 2_0E
-  (CborItem(kind: cbByteString, countBytes: 15), 0),                              # 2_0F
-  (CborItem(kind: cbByteString, countBytes: 16), 0),                              # 2_10
-  (CborItem(kind: cbByteString, countBytes: 17), 0),                              # 2_11
-  (CborItem(kind: cbByteString, countBytes: 18), 0),                              # 2_12
-  (CborItem(kind: cbByteString, countBytes: 19), 0),                              # 2_13
-  (CborItem(kind: cbByteString, countBytes: 20), 0),                              # 2_14
-  (CborItem(kind: cbByteString, countBytes: 21), 0),                              # 2_15
-  (CborItem(kind: cbByteString, countBytes: 22), 0),                              # 2_16
-  (CborItem(kind: cbByteString, countBytes: 23), 0),                              # 2_17
-  (CborItem(kind: cbByteString, countBytes: 0), 1),                               # 2_18
-  (CborItem(kind: cbByteString, countBytes: 0), 2),                               # 2_19
-  (CborItem(kind: cbByteString, countBytes: 0), 4),                               # 2_1A
-  (CborItem(kind: cbByteString, countBytes: 0), 8),                               # 2_1B
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 0), 0),               # 2_00
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 1), 0),               # 2_01
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 2), 0),               # 2_02
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 3), 0),               # 2_03
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 4), 0),               # 2_04
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 5), 0),               # 2_05
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 6), 0),               # 2_06
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 7), 0),               # 2_07
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 8), 0),               # 2_08
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 9), 0),               # 2_09
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 10), 0),              # 2_0A
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 11), 0),              # 2_0B
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 12), 0),              # 2_0C
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 13), 0),              # 2_0D
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 14), 0),              # 2_0E
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 15), 0),              # 2_0F
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 16), 0),              # 2_10
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 17), 0),              # 2_11
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 18), 0),              # 2_12
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 19), 0),              # 2_13
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 20), 0),              # 2_14
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 21), 0),              # 2_15
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 22), 0),              # 2_16
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 23), 0),              # 2_17
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 0), 1),               # 2_18
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 0), 2),               # 2_19
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 0), 4),               # 2_1A
+  (CborItem(kind: cbByteString, boundStr: true, countBytes: 0), 8),               # 2_1B
   (CborItem(kind: cbInvalid, invalidKind: cbByteString, invalidInfo: 28), 0),     # 2_1C
   (CborItem(kind: cbInvalid, invalidKind: cbByteString, invalidInfo: 29), 0),     # 2_1D
   (CborItem(kind: cbInvalid, invalidKind: cbByteString, invalidInfo: 30), 0),     # 2_1E
-  (CborItem(kind: cbInvalid, invalidKind: cbByteString, invalidInfo: 31), 0),     # 2_1F
+  (CborItem(kind: cbByteString, boundStr: false), 0),                             # 2_1F
 
   # ### KIND 3: TEXT STRING ### #
-  (CborItem(kind: cbTextString, countBytes: 0), 0),                               # 3_00
-  (CborItem(kind: cbTextString, countBytes: 1), 0),                               # 3_01
-  (CborItem(kind: cbTextString, countBytes: 2), 0),                               # 3_02
-  (CborItem(kind: cbTextString, countBytes: 3), 0),                               # 3_03
-  (CborItem(kind: cbTextString, countBytes: 4), 0),                               # 3_04
-  (CborItem(kind: cbTextString, countBytes: 5), 0),                               # 3_05
-  (CborItem(kind: cbTextString, countBytes: 6), 0),                               # 3_06
-  (CborItem(kind: cbTextString, countBytes: 7), 0),                               # 3_07
-  (CborItem(kind: cbTextString, countBytes: 8), 0),                               # 3_08
-  (CborItem(kind: cbTextString, countBytes: 9), 0),                               # 3_09
-  (CborItem(kind: cbTextString, countBytes: 10), 0),                              # 3_0A
-  (CborItem(kind: cbTextString, countBytes: 11), 0),                              # 3_0B
-  (CborItem(kind: cbTextString, countBytes: 12), 0),                              # 3_0C
-  (CborItem(kind: cbTextString, countBytes: 13), 0),                              # 3_0D
-  (CborItem(kind: cbTextString, countBytes: 14), 0),                              # 3_0E
-  (CborItem(kind: cbTextString, countBytes: 15), 0),                              # 3_0F
-  (CborItem(kind: cbTextString, countBytes: 16), 0),                              # 3_10
-  (CborItem(kind: cbTextString, countBytes: 17), 0),                              # 3_11
-  (CborItem(kind: cbTextString, countBytes: 18), 0),                              # 3_12
-  (CborItem(kind: cbTextString, countBytes: 19), 0),                              # 3_13
-  (CborItem(kind: cbTextString, countBytes: 20), 0),                              # 3_14
-  (CborItem(kind: cbTextString, countBytes: 21), 0),                              # 3_15
-  (CborItem(kind: cbTextString, countBytes: 22), 0),                              # 3_16
-  (CborItem(kind: cbTextString, countBytes: 23), 0),                              # 3_17
-  (CborItem(kind: cbTextString, countBytes: 0), 1),                               # 3_18
-  (CborItem(kind: cbTextString, countBytes: 0), 2),                               # 3_19
-  (CborItem(kind: cbTextString, countBytes: 0), 4),                               # 3_1A
-  (CborItem(kind: cbTextString, countBytes: 0), 8),                               # 3_1B
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 0), 0),               # 3_00
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 1), 0),               # 3_01
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 2), 0),               # 3_02
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 3), 0),               # 3_03
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 4), 0),               # 3_04
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 5), 0),               # 3_05
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 6), 0),               # 3_06
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 7), 0),               # 3_07
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 8), 0),               # 3_08
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 9), 0),               # 3_09
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 10), 0),              # 3_0A
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 11), 0),              # 3_0B
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 12), 0),              # 3_0C
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 13), 0),              # 3_0D
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 14), 0),              # 3_0E
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 15), 0),              # 3_0F
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 16), 0),              # 3_10
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 17), 0),              # 3_11
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 18), 0),              # 3_12
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 19), 0),              # 3_13
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 20), 0),              # 3_14
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 21), 0),              # 3_15
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 22), 0),              # 3_16
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 23), 0),              # 3_17
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 0), 1),               # 3_18
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 0), 2),               # 3_19
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 0), 4),               # 3_1A
+  (CborItem(kind: cbTextString, boundStr: true, countBytes: 0), 8),               # 3_1B
   (CborItem(kind: cbInvalid, invalidKind: cbTextString, invalidInfo: 28), 0),     # 3_1C
   (CborItem(kind: cbInvalid, invalidKind: cbTextString, invalidInfo: 29), 0),     # 3_1D
   (CborItem(kind: cbInvalid, invalidKind: cbTextString, invalidInfo: 30), 0),     # 3_1E
-  (CborItem(kind: cbInvalid, invalidKind: cbTextString, invalidInfo: 31), 0),     # 3_1F
+  (CborItem(kind: cbTextString, boundStr: false), 0),                             # 3_1F
 
   # ### KIND 4: ARRAY ### #
   (CborItem(kind: cbArray, bound: true, countItems: 0), 0),                       # 4_00
