@@ -1,4 +1,4 @@
-import cbor
+import nxcbor
 
 let result = "\0".cborItem
 assert result.length == 1

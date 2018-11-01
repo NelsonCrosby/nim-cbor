@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.0.0"
+version       = "0.2.0"
 author        = "Nelson Crosby"
 description   = "CBOR encoder/decoder"
 license       = "BSD2"

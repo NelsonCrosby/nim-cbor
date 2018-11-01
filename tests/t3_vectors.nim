@@ -2,7 +2,7 @@ import strutils
 import sequtils
 import tables
 import json
-import cbor
+import nxcbor
 
 
 type
@@ -92,6 +92,7 @@ for vector in vectors.mitems:
     parser.add(vector.hex.parseHexStr())
     (vector.obj, done) = parser.next()
   except AssertionError:
+    nFailed += 1
     echo "FAILED ", vector.hex, ": Assertion"
     echo "  ", getCurrentExceptionMsg()
     continue

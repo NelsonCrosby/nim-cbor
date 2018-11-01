@@ -1,6 +1,6 @@
 import unittest
 import strutils
-import cbor
+import nxcbor
 
 
 template tt(strs: seq[string], xdone: bool, xkind: CborObjectKind) =
