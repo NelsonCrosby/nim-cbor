@@ -83,10 +83,10 @@ echo "RUNNING ", vectors.len, " VECTORS"
 
 var nPassed, nFailed: int
 
+var parser = newCborObjectParser()
+
 for vector in vectors.mitems:
-  var
-    parser = newCborObjectParser()
-    done: bool
+  var done: bool
 
   try:
     parser.add(vector.hex.parseHexStr())

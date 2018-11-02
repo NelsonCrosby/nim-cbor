@@ -27,6 +27,8 @@ proc pop[T](list: var DoublyLinkedList[T]): T {.discardable.} =
 proc pop[T](list: var SinglyLinkedList[T]): T {.discardable.} =
   let node = list.head
   list.head = node.next
+  if node.next.isNil:
+    list.tail = nil
   return node.value
 
 proc insert[T](after: var DoublyLinkedNode[T], node: DoublyLinkedNode[T]) =
