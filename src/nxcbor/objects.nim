@@ -40,7 +40,7 @@ proc insert[T](after: var DoublyLinkedNode[T], value: T) =
 
 type
   CborObjectParseError* = object of Exception
-    invalidItem: CborItem
+    invalidItem*: CborItem
 
 proc newParseError(item: CborItem, msg: string): ref CborObjectParseError =
   result = newException(CborObjectParseError, msg)
