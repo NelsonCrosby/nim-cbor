@@ -40,16 +40,23 @@ proc insert[T](after: var DoublyLinkedNode[T], value: T) =
 
 type
   CborObjectParseError* = object of Exception
+    invalidItem: CborItem
 
+proc newParseError(item: CborItem, msg: string): ref CborObjectParseError =
+  result = newException(CborObjectParseError, msg)
+  result.invalidItem = item
+
+
+type
   CborObjectKind* = enum
     cboInteger,
     cboString,
     cboArray,
     cboTable,
+    cboSimple,
     cboBoolean,
     cboNull, cboUndefined,
     cboFloat32, cboFloat64,
-    cboInvalid
 
   CborObject* = object
     tags*: seq[uint64]
@@ -63,6 +70,8 @@ type
       items*: seq[CborObject]
     of cboTable:
       table*: seq[tuple[key, value: CborObject]]
+    of cboSimple:
+      valueSimple*: uint64
     of cboBoolean:
       isSet*: bool
     of cboNull, cboUndefined: discard
@@ -70,8 +79,6 @@ type
       valueFloat32*: float32
     of cboFloat64:
       valueFloat64*: float64
-    of cboInvalid:
-      invalidItem*: CborItem
 
   CborObjectParser* = ref object
     buffer: string
@@ -233,10 +240,14 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
             if chld.kind == cbBreak:
               break
             elif chld.kind != item.kind or not chld.boundStr:
-              result.obj.kind = cboInvalid
-              result.obj.invalidItem = item
-              result.done = true
-              return
+              raise newParseError(
+                chld, "unexpected " & $chld.kind &
+                " item not of " & $item.kind & " in unbound string"
+              )
+            elif not chld.boundStr:
+              raise newParseError(
+                chld, "expected bound " & $chld.kind & " in unbound string"
+              )
             else:
               data.add(parser.itemQueue.pop().data)
         elif item.countBytes == 0:
@@ -307,8 +318,8 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
         result.obj.tags.insert(item.valueTag)
 
       of cbSimple:
-        result.obj.kind = cboInvalid
-        result.obj.invalidItem = item
+        result.obj.kind = cboSimple
+        result.obj.valueSimple = item.valueSimple
 
       of cbBoolean:
         result.obj.kind = cboBoolean
@@ -326,9 +337,11 @@ proc next*(parser: CborObjectParser): tuple[obj: CborObject, done: bool] =
         result.obj.kind = cboFloat64
         result.obj.valueFloat64 = item.valueFloat64
 
-      of cbBreak, cbInvalid:
-        result.obj.kind = cboInvalid
-        result.obj.invalidItem = item
+      of cbBreak:
+        raise newParseError(item, "unexpected break")
+
+      of cbInvalid:
+        raise newParseError(item, "invalid item")
 
     result.done = true
 
@@ -358,6 +371,10 @@ proc item*(obj: CborObject): CborItem =
       result.kind = cbTable
       result.bound = true
       result.countItems = uint64(obj.table.len)
+    
+    of cboSimple:
+      result.kind = cbSimple
+      result.valueSimple = obj.valueSimple
 
     of cboBoolean:
       result.kind = cbBoolean
@@ -374,9 +391,6 @@ proc item*(obj: CborObject): CborItem =
     of cboFloat64:
       result.kind = cbFloat64
       result.valueFloat64 = obj.valueFloat64
-
-    of cboInvalid:
-      result = obj.invalidItem
 
 proc encode*(obj: CborObject): string =
   result = ""

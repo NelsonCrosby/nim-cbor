@@ -48,6 +48,8 @@ proc diagnostic*(obj: CborObject): string =
         result.add(", ")
       result[^2] = '}'
       result = result[0..^2]
+    of cboSimple:
+      result = "simple(" & $obj.valueSimple & ")"
     of cboBoolean:
       result = $obj.isSet
     of cboNull:
@@ -66,19 +68,6 @@ proc diagnostic*(obj: CborObject): string =
         of fcNegInf: "-Infinity"
         of fcNaN: "NaN"
         else: $obj.valueFloat64
-
-    of cboInvalid:
-      let item = obj.invalidItem
-      case item.kind:
-        of cbSimple:
-          result = "simple(" & $item.valueSimple & ")"
-        else:
-          result = (
-            "!!!(" &
-            "kind: " & $item.invalidKind &
-            ", info: " & $item.invalidInfo &
-            ")"
-          )
 
   for i in countdown(obj.tags.high, obj.tags.low):
     result = $obj.tags[i] & "(" & result & ")"
